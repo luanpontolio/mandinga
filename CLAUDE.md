@@ -6,7 +6,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-27
 - TypeScript 5.x (Node 20+ or Bun) + `@chainlink/cre-sdk`, `viem` v2, Bun (package manager) (006-automation)
 - N/A — workflows are stateless; state read from chain (006-automation)
 
-### Backend (`backend/`)
+### Contracts (`contracts/`)
 - Solidity ^0.8.20 + Foundry (forge)
 - OpenZeppelin Contracts v5
 - OpenZeppelin Foundry Upgrades
@@ -32,20 +32,20 @@ mandinga-protocol/
 │   ├── reallocation-trigger/
 │   ├── yield-harvest/      Cron 1x/day
 │   └── project.yaml        Base RPCs
-├── backend/
-│   ├── contracts/        ← Solidity sources (src = "contracts" in foundry.toml)
+├── contracts/            ← Foundry project root (run forge from here)
+│   ├── foundry.toml      ← src = "src", libs = ["lib"]
+│   ├── remappings.txt
+│   ├── src/              ← Solidity sources
 │   │   ├── core/
 │   │   ├── yield/
-│   │   ├── governance/
+│   │   ├── governance/   (.gitkeep — v2)
 │   │   └── interfaces/
 │   ├── script/           ← Forge deploy scripts (*.s.sol)
 │   ├── test/             ← Forge tests (*.t.sol)
 │   │   ├── unit/
 │   │   ├── integration/
 │   │   └── invariant/
-│   ├── lib/              ← Foundry git submodule dependencies
-│   ├── foundry.toml
-│   └── Makefile
+│   └── lib/              ← Foundry git submodule dependencies
 └── frontend/
     └── src/
         ├── app/          ← Pages (thin: compose Templates + call hooks)
@@ -56,19 +56,18 @@ mandinga-protocol/
         │   └── templates/← DashboardTemplate, CircleTemplate, SolidarityTemplate
         ├── hooks/        ← wagmi contract hooks (only used in app/ pages)
         └── lib/
-            └── abi/      ← Generated ABIs (synced from backend/out/)
+            └── abi/      ← Generated ABIs (synced from contracts/out/)
 ```
 
 ## Commands
 
-### Backend
+### Contracts
 ```bash
-# from backend/
+# from contracts/
 forge build                    # compile contracts
 forge test                     # run all tests
 forge test --match-path "test/invariant/*" --invariant-runs 10000
-forge script script/DeployYieldEngine.s.sol --broadcast --network arbitrum_sepolia
-make sync-abi                  # copy ABIs to frontend/src/lib/abi/
+forge script script/DeployYieldEngine.s.sol --broadcast --network base_sepolia
 ```
 
 ### Frontend
