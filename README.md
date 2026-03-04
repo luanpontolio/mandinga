@@ -8,7 +8,7 @@ A permissionless savings primitive that encodes rotating savings circle (ROSCA) 
 
 ## What It Is
 
-Mandinga Protocol gives anyone access to lump-sum capital earlier than individual saving allows, the same compounding advantage that historically required wealth to access. Members declare how much they can save and for how long; the protocol matches them into circles, routes yield via the Spark USDC Vault (Sky Savings Rate on Base), and selects payouts via Chainlink VRF. No auctions. No organiser. No KYC.
+Mandinga Protocol gives anyone access to lump-sum capital earlier than individual saving allows, the same compounding advantage that historically required wealth to access. Members declare how much they can save and for how long; the protocol matches them into circles, routes yield via the Spark USDC Vault (Sky Savings Rate on Base), and selects payouts via Chainlink VRF.
 
 ## Repository Layout
 
