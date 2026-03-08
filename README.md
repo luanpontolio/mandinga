@@ -1,6 +1,6 @@
 # Mandinga Protocol
 
-A permissionless savings primitive that encodes rotating savings circle (ROSCA) logic into self-custodial smart contracts — giving people cooperative access to credit for productive assets without relying on an institution to run the circle.
+A permissionless savings primitive that encodes rotating savings circle (ROSCA) logic into self-custodial smart contracts, giving people cooperative access to credit for productive assets without relying on an institution to run the circle.
 
 → [Read the Lightpaper](./Lightpaper.md)
 
@@ -8,7 +8,7 @@ A permissionless savings primitive that encodes rotating savings circle (ROSCA) 
 
 ## What It Is
 
-[Savings circles](./Lightpaper.md#12-the-world-invented-the-answer-thousands-of-years-ago) are one of the oldest financial tools in the world. A group of people contribute a fixed amount regularly; the pooled total rotates to one member per round until everyone has received it once. No interest. No credit bureau. No institution in the middle. The mechanic works — its only structural failure is the [organiser, the person trusted to hold the pot and not disappear](./Lightpaper.md#13-the-structural-failure-mode).
+[Savings circles](./Lightpaper.md#12-the-world-invented-the-answer-thousands-of-years-ago) are one of the oldest financial tools in the world. A group of people contribute a fixed amount regularly; the pooled total rotates to one member per round until everyone has received it once. No interest. No credit bureau. No institution in the middle. The mechanic works. Its only structural failure is the [organiser, the person trusted to hold the pot and not disappear](./Lightpaper.md#13-the-structural-failure-mode).
 
 Mandinga Protocol removes the organiser. Members declare how much they can save and for how long; the protocol matches them into circles, enforces contributions through code, selects activation order via Chainlink VRF, and governs itself through the members who participate. When a member is selected, their [position is activated](./Lightpaper.md#32-the-savings-circle-start-with-what-you-can-afford): the full pool is locked in the protocol and attributed to them, continuing to earn yield while remaining obligations settle across the circle. No auctions. No administration fee paid regardless of when you are served.
 
@@ -16,10 +16,10 @@ Mandinga Protocol removes the organiser. Members declare how much they can save 
 
 1. **Deposit** a dollar-stable asset into your self-custodial [savings account](./Lightpaper.md#31-the-savings-account-your-base-layer). It earns yield from the moment it sits.
 2. **Declare** your installment (how much you can contribute per period) and duration (for how long). That is the entire input.
-3. **Match** — the protocol finds other members with the same parameters and forms a circle. The pool size emerges from the match; you never had to name it.
+3. **Match**: the protocol finds other members with the same parameters and forms a circle. The pool size emerges from the match; you never had to name it.
 4. **Round by round**, each member pays their installment. [Chainlink VRF](./Lightpaper.md#32-the-savings-circle-start-with-what-you-can-afford) selects one member per round in a verifiably random order that cannot be purchased or influenced.
-5. **Activation** — when selected, your position is marked active. The full pool is locked to you in the protocol and earns yield while your remaining installments settle automatically.
-6. **Completion** — when the circle closes, all positions settle. The direction for v2: [active positions become claims on real assets](./Lightpaper.md#from-activation-to-ownership), with the protocol as silent lienholder until obligations are met.
+5. **Activation**: when selected, your position is marked active. The full pool is locked to you in the protocol and earns yield while your remaining installments settle automatically.
+6. **Completion**: when the circle closes, all positions settle. The direction for v2: [active positions become claims on real assets](./Lightpaper.md#from-activation-to-ownership), with the protocol as silent lienholder until obligations are met.
 
 ## Chainlink Integration
 
@@ -27,7 +27,7 @@ Mandinga Protocol uses three Chainlink products. All relevant files are listed b
 
 ### Chainlink VRF v2.5
 
-The core fairness guarantee of the savings circle. Selection order is determined by verifiable on-chain randomness — it cannot be purchased, predicted, or influenced. This directly replaces the auction mechanic (the lance) that [broke the cooperative logic of traditional consórcios](./Lightpaper.md#14-case-study-what-happened-to-the-consórcio-in-brazil).
+The core fairness guarantee of the savings circle. Selection order is determined by verifiable on-chain randomness. It cannot be purchased, predicted, or influenced. This directly replaces the auction mechanic (the lance) that [broke the cooperative logic of traditional consórcios](./Lightpaper.md#14-case-study-what-happened-to-the-consórcio-in-brazil).
 
 | File | Description |
 |------|-------------|
@@ -90,7 +90,7 @@ Every member starts here. Deposit a dollar-stable asset and it earns yield autom
 ### [Savings Circle](./Lightpaper.md#32-the-savings-circle-start-with-what-you-can-afford)
 Declare an installment and duration. The protocol matches you into a circle and handles everything: round scheduling, contribution tracking, and selection via Chainlink VRF. No organiser. No auction. Your turn is guaranteed.
 
-**Example:** Ten members each contributing $100/month form a $1,000 pool. The member activated in round one has access to that credit nine months before the member activated in round ten. The rotation distributes the timing advantage equally — no capital required to go first.
+**Example:** Ten members each contributing $100/month form a $1,000 pool. The member activated in round one has access to that credit nine months before the member activated in round ten. The rotation distributes the timing advantage equally. No capital required to go first.
 
 ### [Minimum Installment Option](./Lightpaper.md#the-minimum-installment-a-built-in-safety-net)
 Declare a minimum installment (default: half your full installment) when joining. On difficult months, pay the minimum; the Safety Net Pool covers the difference. A small interest charge accrues and settles automatically when your position is activated. No credit check. No application.
@@ -98,7 +98,7 @@ Declare a minimum installment (default: half your full installment) when joining
 **Example:** A member contributing $50/month can guarantee $25 in any given round. The Safety Net Pool covers the remaining $25, keeping the circle running without interruption.
 
 ### [Safety Net Pool](./Lightpaper.md#33-the-safety-net-pool-making-the-safety-net-possible)
-Members with idle savings capacity deposit into the pool and earn yield on locked capital plus interest from covered members. Their capital backs minimum installment coverage across multiple circles — passive return while amplifying access for others.
+Members with idle savings capacity deposit into the pool and earn yield on locked capital plus interest from covered members. Their capital backs minimum installment coverage across multiple circles, generating a passive return while amplifying access for others.
 
 **Example:** A member deposits $500 into the Safety Net Pool for 12 months. They earn the same base yield as a savings account, plus interest from every member whose shortfall their capital covered that year.
 
