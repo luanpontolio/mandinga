@@ -10,7 +10,7 @@ A permissionless savings primitive that encodes rotating savings circle (ROSCA) 
 
 Savings circles are one of the oldest financial tools in the world. A group of people contribute a fixed amount regularly; the pooled total rotates to one member per round until everyone has received it once. No interest. No credit bureau. No institution in the middle. The mechanic works — its only structural failure is the organiser, the person trusted to hold the pot and not disappear.
 
-Mandinga Protocol removes the organiser. Members declare how much they can save and for how long; the protocol matches them into circles, enforces contributions through code, selects payout order via Chainlink VRF, and governs itself through the members who participate. When a member is selected, their position is activated: the full pool is locked in the protocol and attributed to them, continuing to earn yield while remaining obligations settle across the circle. No auctions. No administration fee paid regardless of when you are served.
+Mandinga Protocol removes the organiser. Members declare how much they can save and for how long; the protocol matches them into circles, enforces contributions through code, selects activation order via Chainlink VRF, and governs itself through the members who participate. When a member is selected, their position is activated: the full pool is locked in the protocol and attributed to them, continuing to earn yield while remaining obligations settle across the circle. No auctions. No administration fee paid regardless of when you are served.
 
 ## How It Works
 
@@ -19,9 +19,70 @@ Mandinga Protocol removes the organiser. Members declare how much they can save 
 3. **Match** — the protocol finds other members with the same parameters and forms a circle. The pool size emerges from the match; you never had to name it.
 4. **Round by round**, each member pays their installment. Chainlink VRF selects one member per round in a verifiably random order that cannot be purchased or influenced.
 5. **Activation** — when selected, your position is marked active. The full pool is locked to you in the protocol and earns yield while your remaining installments settle automatically.
-6. **Completion** — when the circle closes, all positions settle. The cooperative direction: making active positions redeemable for real assets, with the protocol as silent lienholder until obligations are met.
+6. **Completion** — when the circle closes, all positions settle. The direction for v2: making active positions redeemable for real assets, with the protocol as silent lienholder until obligations are met.
 
-## Features
+## Chainlink Integration
+
+Mandinga Protocol uses three Chainlink products. All relevant files are listed below.
+
+### Chainlink VRF v2.5
+
+The core fairness guarantee of the savings circle. Selection order is determined by verifiable on-chain randomness — it cannot be purchased, predicted, or influenced. This directly replaces the auction mechanic (the lance) that broke the cooperative logic of traditional consórcios.
+
+| File | Description |
+|------|-------------|
+| [`mandinga/specs/002-savings-circle/spec.md`](./mandinga/specs/002-savings-circle/spec.md) | VRF v2.5 selection mechanism spec |
+| [`mandinga/specs/002-savings-circle/tasks/task-01-savings-circle-contract.md`](./mandinga/specs/002-savings-circle/tasks/task-01-savings-circle-contract.md) | `VRFConsumerBaseV2Plus` implementation, `fulfillRandomWords` callback |
+| [`contracts/src/interfaces/ISavingsCircle.sol`](./contracts/src/interfaces/ISavingsCircle.sol) | `executeRound()` requests VRF; `fulfillRandomWords()` is VRF-only callback |
+
+### Chainlink CRE (Compute Runtime Environment)
+
+CRE workflows automate protocol-critical operations on a DON (Decentralised Oracle Network). Four workflows are defined; each integrates on-chain state with off-chain computation:
+
+| Workflow | Trigger | Blockchain reads | External data source | Write |
+|----------|---------|-----------------|---------------------|-------|
+| Circle Formation | Cron 1h | Queue contract (intents), Governance (threshold) | Spark vault APY (kickoff viability) | `formCircle()` |
+| Safety Pool Monitor | Cron | SavingsCircle (min-option members), SavingsAccount (balances) | None | None (alert only) |
+| Reallocation Trigger | Cron | SavingsCircle (payment status), SavingsAccount (balance) | None | `initiateReallocation()` |
+| Yield Harvest | Cron 1x/day | YieldRouter APY | Spark `rateProvider.getConversionRate()` | `harvest()` |
+
+**CRE workflow files:**
+
+| File | Description |
+|------|-------------|
+| [`workflows/circle-formation/index.ts`](./workflows/circle-formation/index.ts) | Circle formation workflow entry point |
+| [`workflows/yield-harvest/index.ts`](./workflows/yield-harvest/index.ts) | Yield harvest workflow entry point |
+| [`mandinga/specs/006-automation/spec.md`](./mandinga/specs/006-automation/spec.md) | CRE automation layer spec |
+| [`mandinga/specs/006-automation/contracts/workflow-contracts.md`](./mandinga/specs/006-automation/contracts/workflow-contracts.md) | On-chain interfaces called by workflows |
+| [`mandinga/specs/006-automation/data-model.md`](./mandinga/specs/006-automation/data-model.md) | Workflow data model (stateless; reads chain each run) |
+
+**Simulate a workflow (CRE CLI):**
+
+```bash
+cd workflows/circle-formation
+bun install
+cre workflow simulate
+```
+
+### Chainlink Data Feeds *(v2)*
+
+`AggregatorV3Interface` via `OracleAggregator` for multi-source yield rate data. Deferred to v2; Spark `rateProvider.getConversionRate()` is used directly in v1.
+
+| File | Description |
+|------|-------------|
+| [`mandinga/specs/004-yield-engine/tasks/task-02-oracle-aggregator.md`](./mandinga/specs/004-yield-engine/tasks/task-02-oracle-aggregator.md) | `AggregatorV3Interface` integration, multi-feed aggregation |
+
+## Feature Specs
+
+| # | Feature | Status |
+|---|---------|--------|
+| [001](./mandinga/specs/001-savings-account/) | Savings Account | Implemented |
+| [002](./mandinga/specs/002-savings-circle/) | Savings Circle | In progress |
+| [003](./mandinga/specs/003-safety-net-pool/) | Safety Net Pool | Specified |
+| [004](./mandinga/specs/004-yield-engine/) | Yield Engine (Spark USDC Vault v1) | Specified |
+| [005](./mandinga/specs/005-privacy-layer/) | Privacy Layer | Specified |
+| [006](./mandinga/specs/006-automation/) | CRE Automation | In progress |
+| [007](./mandinga/specs/007-defi-dashboard/) | DeFi Dashboard | In progress |
 
 ### Savings Account
 Every member starts here. Deposit a dollar-stable asset and it earns yield automatically, routed to the Spark USDC Vault (Sky Savings Rate on Base). No management required.
@@ -43,23 +104,6 @@ Members with idle savings capacity deposit into the pool and earn yield on locke
 
 ### Cooperative Governance
 Governance weight is equal per member regardless of deposit size. Protocol-level decisions are made by participants, not token holders or administrators.
-
-## Roadmap
-
-### v1 — Current
-- Self-custodial savings account with on-chain yield (Spark USDC Vault)
-- Circle matching by installment and duration
-- Chainlink VRF v2.5 for verifiably fair, non-purchasable selection order
-- Safety Net Pool with minimum installment coverage
-- Chainlink CRE automation: circle formation, yield harvest, safety pool monitoring, reallocation triggers
-- Equal-weight cooperative governance
-
-### v2 — Planned
-- Proof of selection: on-chain credential issued at activation, redeemable for real-world assets
-- Tokenized real-world asset integration: use your active position toward a car, equipment, or property — with the protocol as lienholder until obligations are met
-- Privacy layer: shielded balances, contribution history, and circle membership
-- Chainlink Data Feeds via `OracleAggregator` for multi-source yield rate data
-- Real-world yield sources (Ondo, Superstate) alongside Spark
 
 ## Repository Layout
 
@@ -118,18 +162,6 @@ cd workflows
 bun install
 ```
 
-## Feature Specs
-
-| # | Feature | Status |
-|---|---------|--------|
-| [001](./mandinga/specs/001-savings-account/) | Savings Account | Implemented |
-| [002](./mandinga/specs/002-savings-circle/) | Savings Circle | In progress |
-| [003](./mandinga/specs/003-safety-net-pool/) | Safety Net Pool | Specified |
-| [004](./mandinga/specs/004-yield-engine/) | Yield Engine (Spark USDC Vault v1) | Specified |
-| [005](./mandinga/specs/005-privacy-layer/) | Privacy Layer | Specified |
-| [006](./mandinga/specs/006-automation/) | CRE Automation | In progress |
-| [007](./mandinga/specs/007-defi-dashboard/) | DeFi Dashboard | In progress |
-
 ## Key Design Decisions
 
 - **Yield source (v1):** Spark USDC Vault (Sky Savings Rate, Base). Real-world yield sources deferred to v2
@@ -138,55 +170,22 @@ bun install
 - **Privacy:** `bytes32 shieldedId` throughout state and events. No addresses on-chain (v2)
 - **Governance:** Equal weight per member regardless of deposit size
 
-## Chainlink Integration
+## Roadmap
 
-Mandinga Protocol uses three Chainlink products.
+### v1 — Current
+- Self-custodial savings account with on-chain yield (Spark USDC Vault)
+- Circle matching by installment and duration
+- Chainlink VRF v2.5 for verifiably fair, non-purchasable selection order
+- Safety Net Pool with minimum installment coverage
+- Chainlink CRE automation: circle formation, yield harvest, safety pool monitoring, reallocation triggers
+- Equal-weight cooperative governance
 
-### Chainlink CRE (Compute Runtime Environment)
-
-CRE workflows automate protocol-critical operations on a DON (Decentralised Oracle Network). Four workflows are defined; each integrates on-chain state with off-chain computation:
-
-| Workflow | Trigger | Blockchain reads | External data source | Write |
-|----------|---------|-----------------|---------------------|-------|
-| Circle Formation | Cron 1h | Queue contract (intents), Governance (threshold) | Spark vault APY (kickoff viability) | `formCircle()` |
-| Safety Pool Monitor | Cron | SavingsCircle (min-option members), SavingsAccount (balances) | None | None (alert only) |
-| Reallocation Trigger | Cron | SavingsCircle (payment status), SavingsAccount (balance) | None | `initiateReallocation()` |
-| Yield Harvest | Cron 1x/day | YieldRouter APY | Spark `rateProvider.getConversionRate()` | `harvest()` |
-
-**CRE workflow files:**
-
-| File | Description |
-|------|-------------|
-| [`workflows/circle-formation/index.ts`](./workflows/circle-formation/index.ts) | Circle formation workflow entry point |
-| [`workflows/yield-harvest/index.ts`](./workflows/yield-harvest/index.ts) | Yield harvest workflow entry point |
-| [`mandinga/specs/006-automation/spec.md`](./mandinga/specs/006-automation/spec.md) | CRE automation layer spec |
-| [`mandinga/specs/006-automation/contracts/workflow-contracts.md`](./mandinga/specs/006-automation/contracts/workflow-contracts.md) | On-chain interfaces called by workflows |
-| [`mandinga/specs/006-automation/data-model.md`](./mandinga/specs/006-automation/data-model.md) | Workflow data model (stateless; reads chain each run) |
-
-**Simulate a workflow (CRE CLI):**
-
-```bash
-cd workflows/circle-formation
-bun install
-cre workflow simulate
-```
-
-### Chainlink VRF v2.5
-
-Used in the Savings Circle to determine activation order. Selection is verifiably random and cannot be purchased (no auction mechanic).
-
-| File | Description |
-|------|-------------|
-| [`mandinga/specs/002-savings-circle/spec.md`](./mandinga/specs/002-savings-circle/spec.md) | VRF v2.5 selection mechanism spec |
-| [`contracts/src/interfaces/ISavingsCircle.sol`](./contracts/src/interfaces/ISavingsCircle.sol) | `executeRound()` requests VRF; `fulfillRandomWords()` is VRF-only callback |
-
-### Chainlink Data Feeds *(v2)*
-
-`AggregatorV3Interface` via `OracleAggregator` for multi-source yield rate data. Deferred to v2; Spark `rateProvider.getConversionRate()` is used directly in v1.
-
-| File | Description |
-|------|-------------|
-| [`mandinga/specs/004-yield-engine/tasks/task-02-oracle-aggregator.md`](./mandinga/specs/004-yield-engine/tasks/task-02-oracle-aggregator.md) | `AggregatorV3Interface` integration, multi-feed aggregation |
+### v2 — Planned
+- Proof of selection: on-chain credential issued at activation, redeemable for real-world assets
+- Tokenized real-world asset integration: use your active position toward a car, equipment, or property, with the protocol as lienholder until obligations are met
+- Privacy layer: shielded balances, contribution history, and circle membership
+- Chainlink Data Feeds via `OracleAggregator` for multi-source yield rate data
+- Real-world yield sources (Ondo, Superstate) alongside Spark
 
 ## License
 
